@@ -1,3 +1,7 @@
+/* flash */
+.flash-message.success { background: #28a745; color: white; }
+.flash-message.error { background: #dc3545; color: white; }
+
 /* base.html */
 body 
 { 
@@ -82,6 +86,68 @@ body
     margin-top: 5px;
 }
 
+/* order.html */
+
+.order-board
+{
+    width: 400px;
+    margin: 50px auto;
+    background: #2f2f2f;
+    border-radius: 15px;
+    padding-bottom: 10px;
+    padding-left: 10px;
+}
+
+.order-board {
+    max-width: 500px;
+    margin: 50px auto;
+    background: #2f2f2f;
+    border-radius: 15px;
+    padding: 30px;
+    color: white;
+}
+
+.order-board h1 {
+    text-align: center;
+    margin-bottom: 25px;
+    color: white;
+}
+
+.order-board input,
+.order-board textarea,
+.order-board button {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid #444;
+    border-radius: 8px;
+    font-size: 16px;
+    font-family: Arial, sans-serif;
+    background: #3c3c3c;
+    color: white;
+}
+
+.order-board textarea {
+    height: 80px;
+    resize: vertical;
+}
+
+.order-board button {
+    background: #333;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.3s;
+    height: 50px;
+}
+
+.order-board button:hover {
+    background: #555;
+}
+
 /* cart.html */
 
 .menu-text
@@ -106,6 +172,7 @@ body
 
 .dishes-in-karzina
 {
+    padding: 2.5px;
     color: white;
 }
 
@@ -113,7 +180,6 @@ body
 {
     color: white;
 }
-
 
 .dishes-in-karzina a
 {
@@ -135,6 +201,16 @@ body
 }
 
 /* login.html */
+
+.error-message {
+    color: #ff4444;
+    background: rgba(255, 68, 68, 0.1);
+    border: 1px solid #ff4444;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 15px;
+    text-align: center;
+}
 
 .login-board h2
 {

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session, url_for, Response
+from flask import Flask, render_template, request, redirect, session, url_for, Response, flash
 from functools import wraps
 import sqlite3
 
@@ -26,6 +26,7 @@ def init_db():
             customer_address TEXT NOT NULL,
             order_items TEXT NOT NULL,
             total_price INTEGER NOT NULL,
+            comments TEXT,
             status TEXT DEFAULT 'Новый',
             order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
@@ -94,10 +95,16 @@ def order():
     return render_template('order.html')
 
 @app.route('/place_order', methods=['POST'])
+@app.route('/place_order', methods=['POST'])
 def place_order():
     name = request.form['name']
     phone = request.form['phone']
     address = request.form['address']
+    comments = request.form.get('comments', '')
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
     cart_items = []
     total = 0
     if 'cart' in session:
@@ -106,13 +113,26 @@ def place_order():
             if item:
                 cart_items.append(item['name'])
                 total += item['price']
-    conn = get_db_connection()
-    conn.execute('INSERT INTO orders (customer_name, customer_phone, customer_address, order_items, total_price) VALUES (?, ?, ?, ?, ?)',
-                 (name, phone, address, ', '.join(cart_items), total))
+    
+    if not cart_items:
+        flash('Корзина пуста!', 'error')
+        conn.close()
+        return redirect('/cart')
+    
+    cursor.execute('''
+        INSERT INTO orders (customer_name, customer_phone, customer_address, 
+                          order_items, total_price, comments) 
+        VALUES (?, ?, ?, ?, ?, ?)
+    ''', (name, phone, address, ', '.join(cart_items), total, comments))
+    
+    order_id = cursor.lastrowid
     conn.commit()
     conn.close()
+    
     session.pop('cart', None)
-    return "Заказ оформлен! <a href='/'>Вернуться в меню</a>"
+    flash(f'Заказ успешно оформлен!', 'success')
+    return redirect('/')
+
 
 @app.route('/admin')
 def admin():
@@ -139,17 +159,16 @@ def update_status(order_id, status):
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    error = None
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-
         if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
             session['admin'] = True
             return redirect('/admin')
         else:
-            return "Неверный логин или пароль"
-
-    return render_template('login.html')
+            error = 'Неверный логин или пароль'
+    return render_template('login.html', error=error)
 
 @app.route('/logout')
 def logout():

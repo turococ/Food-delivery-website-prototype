@@ -8,6 +8,15 @@
         <a href="/">Меню</a>
         <a href="/cart">Корзина</a> <a href="/admin">Войти</a>
     </div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+      <div class="flash-message {{ category }}" style="padding: 15px; margin: 20px; border-radius: 8px; text-align: center;">
+        {{ message }}
+      </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
     {% block content %}{% endblock %} 
 </body>
 </html>

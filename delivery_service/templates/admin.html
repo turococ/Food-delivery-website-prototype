@@ -2,11 +2,11 @@
 {% block content %} 
 <div class="admin-panel">
 <h1>Панель администратора
-    <a href="/logout" style="float:right; background:red; color:white; padding:5px 10 px;">Выйти</a>
+    <a href="/logout" style="float:right; border-radius: 15px; padding: 2px; background:red; color:white; padding:5px 10 px;">Выйти</a>
 </h1>
 <table border="1" cellpadding="5">
     <tr> 
-        <th>ID</th><th>Клиент</th><th>Телефон</th><th>Адрес</th><th>Заказ</th><th>Сумма</th><th>Статус</th><th>Действие</th> 
+        <th>ID</th><th>Клиент</th><th>Телефон</th><th>Адрес</th><th>Заказ</th><th>комментарий</th><th>Сумма</th><th>Статус</th><th>Действие</th> 
     </tr>
     {% for order in orders %}
     <tr>
@@ -15,6 +15,7 @@
         <td>{{ order.customer_phone }}</td>
         <td>{{ order.customer_address }}</td> 
         <td>{{ order.order_items }}</td> 
+        <td>{{ order.comments }}</td>
         <td>{{ order.total_price }} ₽</td> 
         <td>{{ order.status }}</td>
         <td>
