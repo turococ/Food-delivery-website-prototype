@@ -1,0 +1,13 @@
+<!DOCTYPE html> <html>
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Доставка еды</title> 
+</head>
+<body>
+    <div class="nav">
+        <a href="/">Меню</a>
+        <a href="/cart">Корзина</a> <a href="/admin">Войти</a>
+    </div>
+    {% block content %}{% endblock %} 
+</body>
+</html>

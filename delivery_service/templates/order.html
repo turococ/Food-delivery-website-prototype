@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Оформление заказа</h1>
+<form method="POST" action="/place_order">
+    <input type="text" name="name" placeholder="Имя" required><br> 
+    <input type="text" name="phone" placeholder="Телефон" required><br> 
+    <textarea name="address" placeholder="Адрес" required></textarea><br>
+    <textarea name="comments" placeholder="Комментарий к заказу" required></textarea>
+    <button type="submit">Заказать</button>
+</form>
+{% endblock %}

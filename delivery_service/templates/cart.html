@@ -1,0 +1,13 @@
+{% extends "base.html" %} 
+{% block content %}
+<div class="karzina-board">
+    <h1 class="karzina">Корзина</h1>
+    <ul>
+        {% for item in items %}
+        <li class="dishes-in-karzina">{{ item.name }} - {{ item.price }} ₽ <a href="/remove_from_cart/{{ item.id }} ">Удалить</a></li>
+        {% endfor %} 
+    </ul>
+    <p>Итого: {{ total }} ₽</p>
+    <a class="oformit-order" href="/order">Оформить заказ</a>
+    {% endblock %}
+</div>
