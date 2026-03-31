@@ -11,8 +11,10 @@
              alt="{{ item.name }}" 
              loading="lazy">
         <h3 class="dish_name">{{ item.name }}</h3>
-        <p>{{ item.category }} | {{ item.price }} ₽</p> 
-        <a href="/add_to_cart/{{ item.id }}">Добавить</a>
+        <div class="dish-info">
+            <p>{{ item.category }} | {{ item.price }} ₽</p>
+            <a href="/add_to_cart/{{ item.id }}">Добавить</a>
+        </div>
     </div>
     {% endfor %} 
 </div>
