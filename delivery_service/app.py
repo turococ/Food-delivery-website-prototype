@@ -6,8 +6,8 @@ app = Flask(__name__)
 app.secret_key = 'super-secret-key'
 
 # Настройки админа
-ADMIN_USERNAME = ""
-ADMIN_PASSWORD = ""
+ADMIN_USERNAME = "YOUR USERNAME"
+ADMIN_PASSWORD = "YOUR PASSWORD"
 
 # Подключение к БД
 def get_db_connection():
