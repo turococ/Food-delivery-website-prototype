@@ -1,21 +1,21 @@
-from flask import Flask, render_template, request, redirect, session, url_for, Response, flash
-from functools import wraps
+from flask import Flask, render_template, request, redirect, session, flash
+from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
 import sqlite3
 
 app = Flask(__name__)
 app.secret_key = 'super-secret-key'
 
-# Настройки админа
+total_orders = Counter('total_orders', 'заказов оформлено')
+popular_items = Counter('popular_items', 'Популярные блюда', ['item_name'])
+
 ADMIN_USERNAME = "YOUR USERNAME"
 ADMIN_PASSWORD = "YOUR PASSWORD"
 
-# Подключение к БД
 def get_db_connection():
     conn = sqlite3.connect('food_delivery.db')
     conn.row_factory = sqlite3.Row
     return conn
 
-# Инициализация БД
 def init_db():
     conn = get_db_connection()
     conn.execute('''
@@ -34,7 +34,6 @@ def init_db():
     conn.commit()
     conn.close()
 
-# Меню (заполните своими позициями)
 menu = [
     {"id": 1, "img": "pizza-peperoni.jpg", "name": "Пепперони", "price": 450, "category": "Пицца"},
     {"id": 2, "img": "pizza-margarita.jpg", "name": "Маргарита", "price": 350, "category": "Пицца"},
@@ -50,10 +49,13 @@ menu = [
     {"id": 12, "img": "lazania.png", "name": "Лазанья", "price": 350, "category": "Лазанья"}
 ]
 
-# Маршруты
 @app.route('/')
 def index():
     return render_template('index.html', menu=menu)
+
+@app.route('/metrics')
+def metrics():
+    return generate_latest(), 200, {'Content-Type': CONTENT_TYPE_LATEST}
 
 @app.route('/add_to_cart/<int:item_id>')
 def add_to_cart(item_id):
@@ -95,7 +97,6 @@ def order():
     return render_template('order.html')
 
 @app.route('/place_order', methods=['POST'])
-@app.route('/place_order', methods=['POST'])
 def place_order():
     name = request.form['name']
     phone = request.form['phone']
@@ -125,12 +126,14 @@ def place_order():
         VALUES (?, ?, ?, ?, ?, ?)
     ''', (name, phone, address, ', '.join(cart_items), total, comments))
     
-    order_id = cursor.lastrowid
     conn.commit()
     conn.close()
     
     session.pop('cart', None)
     flash(f'Заказ успешно оформлен!', 'success')
+    total_orders.inc()
+    for item_name in cart_items:
+        popular_items.labels(item_name=item_name).inc()
     return redirect('/')
 
 
@@ -175,6 +178,6 @@ def logout():
     session.pop('admin', None)
     return redirect('/')
 
+init_db()
 if __name__ == '__main__':
-    init_db()
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=8080)
