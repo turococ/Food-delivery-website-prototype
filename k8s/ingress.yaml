@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: food-delivery
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: cafe.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: food-delivery
+                port:
+                  number: 8080
