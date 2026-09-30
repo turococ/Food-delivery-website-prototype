@@ -2,10 +2,13 @@ apiVersion: v1
 kind: Service
 metadata:
   name: food-delivery
+  labels:
+    app: food-delivery
 spec:
   selector:
     app: food-delivery
   ports:
+    - name: http
     - protocol: TCP
       port: 8080
       targetPort: 8080

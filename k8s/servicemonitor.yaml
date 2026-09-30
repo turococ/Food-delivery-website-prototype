@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ServiceMonitor
+metadata:
+  name: food-delivery
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: food-delivery
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 5s
