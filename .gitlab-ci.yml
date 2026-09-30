@@ -1,5 +1,6 @@
 stages:
   - build
+  - deploy
 
 build-image:
   stage: build
@@ -19,3 +20,14 @@ build-image:
     - docker build -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA" -t "$CI_REGISTRY_IMAGE:latest" delivery_service
     - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
     - docker push "$CI_REGISTRY_IMAGE:latest"
+
+deploy:
+  stage: deploy
+  image: bitnami/kubectl:latest
+  entrypoint: [""]
+  script:
+    - kubectl apply -f k8s/
+    - kubectl set image deployment/food-delivery food-delivery="$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
+    - kubectl rollout status deployment/food-delivery --timeout=120s
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
