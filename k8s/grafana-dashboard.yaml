@@ -250,9 +250,3 @@ data:
       "uid": "ad2fxrb",
       "id": 2247428559032320
     }
-kind: ConfigMap
-metadata:
-  labels:
-    grafana_dashboard: "1"
-  name: food-delivery-dashboard
-  namespace: monitoring
