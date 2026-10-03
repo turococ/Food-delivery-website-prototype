@@ -94,7 +94,7 @@ if [[ -z "${GITLAB_DEPLOY_USER:-}" ]]; then
     read -rp "GitLab Deploy token: имя пользователя: " GITLAB_DEPLOY_USER
 fi
 if [[ -z "${GITLAB_DEPLOY_TOKEN:-}" ]]; then
-    read -rsp "GitLab Deploy token: токен (ввод не отображается): " GITLAB_DEPLOY_TOKEN
+    read -rsp "GitLab Deploy token: токен: " GITLAB_DEPLOY_TOKEN
     echo
 fi
 [[ -n "$GITLAB_DEPLOY_USER" && -n "$GITLAB_DEPLOY_TOKEN" ]] || fail "Нужны имя пользователя и токен GitLab Deploy token."
@@ -192,10 +192,9 @@ fi
 
 echo
 echo "Готово."
-echo "  1. В отдельном окне терминала запусти:  minikube tunnel   (только macOS)"
+echo "  1. В отдельном окне терминала запусти:  minikube tunnel"
 echo "  2. Сайт:  http://$SITE_HOST"
 echo "  3. Пароль Argo CD (логин admin):"
-echo "       kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath=\"{.data.password}\" | base64 -d; echo"
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath=\"{.data.password}\" | base64 -d; echo
 echo "  4. Пароль Grafana (логин admin):"
-echo "       kubectl get secret monitoring-grafana -n monitoring -o jsonpath=\"{.data.admin-password}\" | base64 -d; echo"
-echo "  5. Ежедневный запуск: ./start-kuber.sh"
+kubectl get secret monitoring-grafana -n monitoring -o jsonpath=\"{.data.admin-password}\" | base64 -d; echo

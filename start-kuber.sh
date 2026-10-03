@@ -47,7 +47,7 @@ if ! kubectl wait --for=condition=Ready node/minikube --timeout=180s; then
     exit 1
 fi
  
-echo "Жду поды (до нескольких минут после холодного старта)..."
+echo "Жду поды..."
 kubectl rollout status deployment/food-delivery -n default --timeout=180s \
     || echo "Предупреждение: food-delivery ещё не готов (kubectl get pods)."
 kubectl rollout status deployment/monitoring-grafana -n monitoring --timeout=300s \
@@ -72,5 +72,3 @@ echo "  Prometheus: http://localhost:9090"
 echo "  Argo CD:    https://localhost:8443"
 echo
 echo "Если после деплоя или перезапуска пода проброс отвалился, запусти скрипт ещё раз."
-echo "Остановить всё: ./start-kuber.sh stop"
- 
