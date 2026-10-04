@@ -1,7 +1,7 @@
 .PHONY: setup start stop tunnel status
 
 setup:
-	bash ./deploy.sh
+	bash ./setup.sh
 
 start:
 	bash ./start-kuber.sh
