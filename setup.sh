@@ -4,7 +4,6 @@ set -uo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")" || exit 1
 
-REPO_URL="https://gitlab.com/turococ/Food-delivery-website-prototype.git"
 SITE_HOST="cafe.local"
 : "${MINIKUBE_MEMORY_MB:=4096}"
 : "${MINIKUBE_CPUS:=2}"
@@ -84,22 +83,6 @@ if (( docker_mem_mb < needed_mb )); then
 fi
 
 
-if [[ -f .env ]]; then
-    set -a
-    . ./.env
-    set +a
-fi
-
-if [[ -z "${GITLAB_DEPLOY_USER:-}" ]]; then
-    read -rp "GitLab Deploy token: имя пользователя: " GITLAB_DEPLOY_USER
-fi
-if [[ -z "${GITLAB_DEPLOY_TOKEN:-}" ]]; then
-    read -rsp "GitLab Deploy token: токен: " GITLAB_DEPLOY_TOKEN
-    echo
-fi
-[[ -n "$GITLAB_DEPLOY_USER" && -n "$GITLAB_DEPLOY_TOKEN" ]] || fail "Нужны имя пользователя и токен GitLab Deploy token."
-
-
 if minikube status &>/dev/null; then
     echo "minikube уже запущен."
 else
@@ -120,7 +103,7 @@ kubectl wait --namespace ingress-nginx --for=condition=Ready pod \
     || fail "Ingress-контроллер не стал Ready."
 
 
-echo "Ставлю мониторинг (первый раз это несколько минут)..."
+echo "Ставлю мониторинг..."
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts --force-update >/dev/null \
     || fail "Не удалось добавить репозиторий Helm."
 helm repo update >/dev/null
@@ -150,26 +133,9 @@ kubectl wait --for=condition=Established crd/applications.argoproj.io --timeout=
 kubectl rollout status deployment/argocd-server -n argocd --timeout=300s || fail "argocd-server не запустился."
 kubectl rollout status deployment/argocd-repo-server -n argocd --timeout=300s || fail "argocd-repo-server не запустился."
 
-echo "Создаю секреты..."
-kubectl create secret docker-registry gitlab-registry \
-    --docker-server=registry.gitlab.com \
-    --docker-username="$GITLAB_DEPLOY_USER" \
-    --docker-password="$GITLAB_DEPLOY_TOKEN" \
-    --docker-email="deploy@example.com" \
-    --dry-run=client -o yaml | kubectl apply -f - || fail "Не удалось создать секрет gitlab-registry."
-
-kubectl create secret generic gitlab-repo -n argocd \
-    --from-literal=type=git \
-    --from-literal=url="$REPO_URL" \
-    --from-literal=username="$GITLAB_DEPLOY_USER" \
-    --from-literal=password="$GITLAB_DEPLOY_TOKEN" \
-    --dry-run=client -o yaml | kubectl apply -f - || fail "Не удалось создать секрет gitlab-repo."
-kubectl label secret gitlab-repo -n argocd argocd.argoproj.io/secret-type=repository --overwrite \
-    || fail "Не удалось пометить секрет gitlab-repo."
-
 if [[ -f argocd/application.yaml ]]; then
     kubectl apply -f argocd/application.yaml || fail "Не удалось применить argocd/application.yaml."
-    echo "Жду, пока Argo CD развернёт сайт (обычно 1-3 минуты)..."
+    echo "Жду, пока Argo CD развернёт сайт..."
     if wait_for "Deployment food-delivery" 360 'kubectl get deployment food-delivery -n default'; then
         kubectl rollout status deployment/food-delivery -n default --timeout=300s \
             || echo "Предупреждение: сайт ещё не готов. Проверь: kubectl get pods"
@@ -195,6 +161,6 @@ echo "Готово."
 echo "  1. В отдельном окне терминала запусти:  minikube tunnel"
 echo "  2. Сайт:  http://$SITE_HOST"
 echo "  3. Пароль Argo CD (логин admin):"
-kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath=\"{.data.password}\" | base64 -d; echo
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo
 echo "  4. Пароль Grafana (логин admin):"
-kubectl get secret monitoring-grafana -n monitoring -o jsonpath=\"{.data.admin-password}\" | base64 -d; echo
+kubectl get secret monitoring-grafana -n monitoring -o jsonpath="{.data.admin-password}" | base64 -d; echo
