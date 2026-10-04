@@ -71,4 +71,4 @@ echo "  Grafana:    http://localhost:3000"
 echo "  Prometheus: http://localhost:9090"
 echo "  Argo CD:    https://localhost:8443"
 echo
-echo "Если после деплоя или перезапуска пода проброс отвалился, запусти скрипт ещё раз."
+echo "Если после деплоя или перезапуска пода проброс отвалился, запусти скрипт"

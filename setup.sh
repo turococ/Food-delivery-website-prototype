@@ -158,8 +158,6 @@ fi
 
 echo
 echo "Готово."
-echo "  1. В отдельном окне терминала запусти:  minikube tunnel"
-echo "  2. Сайт:  http://$SITE_HOST"
 echo "  3. Пароль Argo CD (логин admin):"
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo
 echo "  4. Пароль Grafana (логин admin):"
