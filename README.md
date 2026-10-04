@@ -105,4 +105,3 @@ topk(5, sum by (item_name) (increase(popular_items_total[1h])))
 ![Дашборд Grafana](docs/grafana.png)
 ![Приложение в Argo CD](docs/argocd.png)
 ![Пайплайн GitLab CI](docs/pipeline.png)
--->
