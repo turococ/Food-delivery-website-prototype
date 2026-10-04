@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, session, flash
 from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
 import sqlite3
+import os
 
 app = Flask(__name__)
 app.secret_key = 'super-secret-key'
@@ -11,8 +12,10 @@ popular_items = Counter('popular_items', 'Популярные блюда', ['it
 ADMIN_USERNAME = "YOUR USERNAME"
 ADMIN_PASSWORD = "YOUR PASSWORD"
 
+DB_PATH = os.environ.get('DATABASE_PATH', 'food_delivery.db')
+
 def get_db_connection():
-    conn = sqlite3.connect('food_delivery.db')
+    conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 

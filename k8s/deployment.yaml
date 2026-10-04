@@ -4,6 +4,8 @@ metadata:
   name: food-delivery
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: food-delivery
@@ -19,3 +21,13 @@ spec:
           image: registry.gitlab.com/turococ/food-delivery-website-prototype:f5544865
           ports:
             - containerPort: 8080
+          env:
+            - name: DATABASE_PATH
+              value: /data/food_delivery.db
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: food-delivery-data

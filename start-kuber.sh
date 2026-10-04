@@ -66,9 +66,11 @@ fi
  
 echo
 echo "Готово."
-echo "  Сайт:       http://cafe.local   (нужен minikube tunnel в отдельном окне терминала)"
+echo "  Сайт:       http://cafe.local"
 echo "  Grafana:    http://localhost:3000"
 echo "  Prometheus: http://localhost:9090"
 echo "  Argo CD:    https://localhost:8443"
 echo
 echo "Если после деплоя или перезапуска пода проброс отвалился, запусти скрипт"
+
+minikube tunnel
