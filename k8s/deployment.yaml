@@ -18,7 +18,7 @@ spec:
         - name: gitlab-registry
       containers:
         - name: food-delivery
-          image: registry.gitlab.com/turococ/food-delivery-website-prototype:a4445e28
+          image: registry.gitlab.com/turococ/food-delivery-website-prototype:d95f324e
           ports:
             - containerPort: 8080
           env:
