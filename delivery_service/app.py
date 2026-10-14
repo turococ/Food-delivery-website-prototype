@@ -1,7 +1,17 @@
 from flask import Flask, render_template, request, redirect, session, flash
 from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
-import sqlite3
+import time
 import os
+import psycopg2
+import psycopg2.extras
+
+DB_CONFIG = {
+    "host": os.environ.get("DB_HOST", "localhost"),
+    "port": os.environ.get("DB_PORT", "5432"),
+    "dbname": os.environ.get("DB_NAME", "food_delivery"),
+    "user": os.environ.get("DB_USER", "food"),
+    "password": os.environ.get("DB_PASSWORD", "")
+}
 
 app = Flask(__name__)
 app.secret_key = 'super-secret-key'
@@ -15,26 +25,34 @@ ADMIN_PASSWORD = "YOUR PASSWORD"
 DB_PATH = os.environ.get('DATABASE_PATH', 'food_delivery.db')
 
 def get_db_connection():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    return psycopg2.connect(cursor_factory=psycopg2.extras.RealDictCursor, **DB_CONFIG)
+
 
 def init_db():
-    conn = get_db_connection()
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS orders (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            customer_name TEXT NOT NULL,
-            customer_phone TEXT NOT NULL,
-            customer_address TEXT NOT NULL,
-            order_items TEXT NOT NULL,
-            total_price INTEGER NOT NULL,
-            comments TEXT,
-            status TEXT DEFAULT 'Новый',
-            order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    conn.commit()
+    conn = None
+    for _ in range(30):
+        try:
+            conn = get_db_connection()
+            break
+        except psycopg2.OperationalError:
+            print("Ожидание PostgreSQL...", flush=True)
+            time.sleep(2)
+    if conn is None:
+        raise RuntimeError("PostgreSQL недоступен")
+    with conn, conn.cursor() as cur:
+        cur.execute('''
+            CREATE TABLE IF NOT EXISTS orders (
+                id SERIAL PRIMARY KEY,
+                customer_name TEXT NOT NULL,
+                customer_phone TEXT NOT NULL,
+                customer_address TEXT NOT NULL,
+                order_items TEXT NOT NULL,
+                total_price INTEGER NOT NULL,
+                comments TEXT,
+                status TEXT DEFAULT 'Новый',
+                order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
     conn.close()
 
 menu = [
@@ -106,61 +124,51 @@ def place_order():
     address = request.form['address']
     comments = request.form.get('comments', '')
     
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cart_items = []
+    cart_items_names = []
     total = 0
     if 'cart' in session:
         for item_id in session['cart']:
             item = next((x for x in menu if x['id'] == item_id), None)
             if item:
-                cart_items.append(item['name'])
+                cart_items_names.append(item['name'])
                 total += item['price']
-    
-    if not cart_items:
-        flash('Корзина пуста!', 'error')
-        conn.close()
-        return redirect('/cart')
-    
-    cursor.execute('''
-        INSERT INTO orders (customer_name, customer_phone, customer_address, 
-                          order_items, total_price, comments) 
-        VALUES (?, ?, ?, ?, ?, ?)
-    ''', (name, phone, address, ', '.join(cart_items), total, comments))
-    
-    conn.commit()
+
+    conn = get_db_connection()
+    with conn, conn.cursor() as cur:
+        cur.execute('''
+            INSERT INTO orders (customer_name, customer_phone, customer_address,
+                                order_items, total_price, comments)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            RETURNING id
+        ''', (name, phone, address, ', '.join(cart_items_names), total, comments))
+        order_id = cur.fetchone()['id']
     conn.close()
     
     session.pop('cart', None)
     flash(f'Заказ успешно оформлен!', 'success')
     total_orders.inc()
-    for item_name in cart_items:
+    for item_name in cart_items_names:
         popular_items.labels(item_name=item_name).inc()
     return redirect('/')
-
 
 @app.route('/admin')
 def admin():
     if not session.get('admin'):
         return redirect('/login')
-
+        
     conn = get_db_connection()
-    orders = conn.execute('SELECT * FROM orders ORDER BY order_date DESC').fetchall()
+    with conn.cursor() as cur:
+        cur.execute('SELECT * FROM orders ORDER BY order_date DESC')
+        orders = cur.fetchall()
     conn.close()
     return render_template('admin.html', orders=orders)
 
-
 @app.route('/update_status/<int:order_id>/<status>')
 def update_status(order_id, status):
-    if not session.get('admin'):
-        return redirect('/login')
-
     conn = get_db_connection()
-    conn.execute('UPDATE orders SET status = ? WHERE id = ?', (status, order_id))
-    conn.commit()
-    conn.close()
-    return redirect('/admin')
+    with conn, conn.cursor() as cur:
+        cur.execute('UPDATE orders SET status = %s WHERE id = %s', (status, order_id))
+    conn.close() 
 
 
 @app.route('/login', methods=['GET', 'POST'])

@@ -22,10 +22,17 @@ spec:
           ports:
             - containerPort: 8080
           env:
-            - name: DATABASE_PATH
-              value: /data/food_delivery.db
-          volumeMounts:
-            - name: data
+            - name: DB_HOST
+              value: postgres
+            - name: DB_NAME
+              value: food_delivery
+            - name: DB_USER
+              value: food
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
               mountPath: /data
       volumes:
         - name: data

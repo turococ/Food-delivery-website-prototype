@@ -133,6 +133,11 @@ kubectl wait --for=condition=Established crd/applications.argoproj.io --timeout=
 kubectl rollout status deployment/argocd-server -n argocd --timeout=300s || fail "argocd-server не запустился."
 kubectl rollout status deployment/argocd-repo-server -n argocd --timeout=300s || fail "argocd-repo-server не запустился."
 
+if ! kubectl get secret postgres-secret &>/dev/null; then
+    kubectl create secret generic postgres-secret \
+        --from-literal=POSTGRES_PASSWORD="$(openssl rand -hex 16)"
+fi
+
 if [[ -f argocd/application.yaml ]]; then
     kubectl apply -f argocd/application.yaml || fail "Не удалось применить argocd/application.yaml."
     echo "Жду, пока Argo CD развернёт сайт..."
