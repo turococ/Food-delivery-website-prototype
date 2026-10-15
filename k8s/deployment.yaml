@@ -33,7 +33,7 @@ spec:
                 secretKeyRef:
                   name: postgres-secret
                   key: POSTGRES_PASSWORD
-              mountPath: /data
+                  mountPath: /data
       volumes:
         - name: data
           persistentVolumeClaim:

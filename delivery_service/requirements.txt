@@ -2,3 +2,6 @@ flask
 prometheus-client
 gunicorn
 grafana
+pika
+redis
+psycopg2-binary
