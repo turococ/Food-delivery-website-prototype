@@ -4,6 +4,8 @@ import time
 import os
 import psycopg2
 import psycopg2.extras
+import pika
+import json
 
 DB_CONFIG = {
     "host": os.environ.get("DB_HOST", "localhost"),
@@ -22,7 +24,20 @@ popular_items = Counter('popular_items', 'Популярные блюда', ['it
 ADMIN_USERNAME = "YOUR USERNAME"
 ADMIN_PASSWORD = "YOUR PASSWORD"
 
-DB_PATH = os.environ.get('DATABASE_PATH', 'food_delivery.db')
+def publish_order_to_queue(order_data):
+    rabbitmq_host = os.environ.get("RABBITMQ_HOST", "rabbitmq")
+    params = pika.ConnectionParameters(host=rabbitmq_host)
+    connection = pika.BlockingConnection(params)
+    channel = connection.channel()
+    
+    channel.queue_declare(queue='order_queue', durable=True)
+    channel.basic_publish(
+        exchange='',
+        routing_key='order_queue',
+        body=json.dumps(order_data),
+        properties=pika.BasicProperties(delivery_mode=2)
+    )
+    connection.close()
 
 def get_db_connection():
     return psycopg2.connect(cursor_factory=psycopg2.extras.RealDictCursor, **DB_CONFIG)
@@ -118,6 +133,7 @@ def order():
     return render_template('order.html')
 
 @app.route('/place_order', methods=['POST'])
+@app.route('/place_order', methods=['POST'])
 def place_order():
     name = request.form['name']
     phone = request.form['phone']
@@ -133,22 +149,25 @@ def place_order():
                 cart_items_names.append(item['name'])
                 total += item['price']
 
-    conn = get_db_connection()
-    with conn, conn.cursor() as cur:
-        cur.execute('''
-            INSERT INTO orders (customer_name, customer_phone, customer_address,
-                                order_items, total_price, comments)
-            VALUES (%s, %s, %s, %s, %s, %s)
-            RETURNING id
-        ''', (name, phone, address, ', '.join(cart_items_names), total, comments))
-        order_id = cur.fetchone()['id']
-    conn.close()
+    order_data = {
+        "customer_name": name,
+        "customer_phone": phone,
+        "customer_address": address,
+        "order_items": ', '.join(cart_items_names),
+        "total_price": total,
+        "comments": comments,
+        "items_list": cart_items_names
+    }
+
+    try:
+        publish_order_to_queue(order_data)
+    except Exception as e:
+        print(f"Ошибка отправки в RabbitMQ: {e}", flush=True)
+        flash('Ошибка при оформлении заказа. Попробуйте позже.', 'danger')
+        return redirect('/')
     
     session.pop('cart', None)
-    flash(f'Заказ успешно оформлен!', 'success')
-    total_orders.inc()
-    for item_name in cart_items_names:
-        popular_items.labels(item_name=item_name).inc()
+    flash('Заказ успешно принят в обработку!', 'success')
     return redirect('/')
 
 @app.route('/admin')
