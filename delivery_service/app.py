@@ -1,5 +1,4 @@
 from flask import Flask, render_template, request, redirect, session, flash
-from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
 import time
 import os
 import psycopg2
@@ -17,9 +16,6 @@ DB_CONFIG = {
 
 app = Flask(__name__)
 app.secret_key = 'super-secret-key'
-
-total_orders = Counter('total_orders', 'заказов оформлено')
-popular_items = Counter('popular_items', 'Популярные блюда', ['item_name'])
 
 ADMIN_USERNAME = "YOUR USERNAME"
 ADMIN_PASSWORD = "YOUR PASSWORD"
@@ -89,9 +85,9 @@ menu = [
 def index():
     return render_template('index.html', menu=menu)
 
-@app.route('/metrics')
-def metrics():
-    return generate_latest(), 200, {'Content-Type': CONTENT_TYPE_LATEST}
+@app.route('/health')
+def health():
+    return {'status': 'ok'}, 200
 
 @app.route('/add_to_cart/<int:item_id>')
 def add_to_cart(item_id):

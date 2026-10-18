@@ -1,7 +1,17 @@
 stages:
   - build
+  - push
   - deploy
 
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: "/certs"
+  REGISTRY: registry.gitlab.com/turococ/food-delivery-website-prototype
+
+before_script:
+  - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+
+# BUILD
 build-image:
   stage: build
   
@@ -21,16 +31,58 @@ build-image:
     - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
     - docker push "$CI_REGISTRY_IMAGE:latest"
 
-deploy:
-  stage: deploy
-  image: alpine:3.20
-  before_script:
-    - apk add --no-cache git sed
+# PUSH
+push:web:
+  stage: push
+  image: docker:27
+  services:
+    - docker:27-dind
+  needs:
+    - build:web
   script:
-    - 'sed -i "s|image: .*|image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA|" k8s/deployment.yaml'
-    - git config user.email "ci@example.com"
-    - git config user.name "gitlab-ci"
-    - git commit -am "Deploy $CI_COMMIT_SHORT_SHA [skip ci]"
-    - git push "https://oauth2:${CI_PUSH_TOKEN}@gitlab.com/turococ/Food-delivery-website-prototype.git" HEAD:main
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
+    - docker push $REGISTRY/web:$CI_COMMIT_SHA
+    - docker push $REGISTRY/web:latest
+  only:
+    - main
+
+push:metrics-exporter:
+  stage: push
+  image: docker:27
+  services:
+    - docker:27-dind
+  needs:
+    - build:metrics-exporter
+  script:
+    - docker push $REGISTRY/metrics-exporter:$CI_COMMIT_SHA
+    - docker push $REGISTRY/metrics-exporter:latest
+  only:
+    - main
+
+push:worker:
+  stage: push
+  image: docker:27
+  services:
+    - docker:27-dind
+  needs:
+    - build:worker
+  script:
+    - docker push $REGISTRY/worker:$CI_COMMIT_SHA
+    - docker push $REGISTRY/worker:latest
+  only:
+    - main
+
+# DEPLOY
+deploy:argocd:
+  stage: deploy
+  image: bitnami/kubectl:latest
+  needs:
+    - push:web
+    - push:metrics-exporter
+    - push:worker
+  script:
+    - kubectl config use-context $KUBE_CONTEXT
+    - kubectl patch application food-delivery -n argocd --type merge -p '{"operation":{"initiatedBy":{"username":"gitlab-ci"}}}'
+    - echo "ArgoCD sync triggered"
+  only:
+    - main
+  when: manual
