@@ -30,7 +30,7 @@ spec:
       labels:
         app: metrics-exporter
     spec:
-      conteiner:
+      containers:
         - name: metrics-exporter
           image: registry.gitlab.com/turococ/food-delivery-website-prototype:metrics-exporter-latest
           ports:

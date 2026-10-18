@@ -129,7 +129,6 @@ def order():
     return render_template('order.html')
 
 @app.route('/place_order', methods=['POST'])
-@app.route('/place_order', methods=['POST'])
 def place_order():
     name = request.form['name']
     phone = request.form['phone']

@@ -30,11 +30,11 @@ spec:
       labels:
         app: redis
     spec:
-      conteiners:
+      containers:
         - name: redis
           image: redis:7-alpine
           ports:
-            - conteinerPort: 6379
+            - containerPort: 6379
           readinessProbe:
             exec:
               command: ["redis-cli", "ping"]
