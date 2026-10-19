@@ -7,8 +7,25 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: food-delivery
+      app: metrics-exporter
   endpoints:
     - port: http
       path: /metrics
-      interval: 5s
+      interval: 15s
+
+---
+
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: food-delivery-web
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: food-delivery
+  endpoints:
+    - port: http
+      path: /health
+      interval: 30s

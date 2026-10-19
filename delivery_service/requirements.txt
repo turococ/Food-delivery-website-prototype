@@ -1,4 +1,5 @@
 flask
-prometheus-client
 gunicorn
-grafana
+psycopg2-binary
+pika
+redis

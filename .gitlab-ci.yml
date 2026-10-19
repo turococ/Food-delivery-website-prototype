@@ -1,36 +1,114 @@
 stages:
   - build
+  - push
   - deploy
 
-build-image:
-  stage: build
-  
-  image: docker:27
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: "/certs"
+  REGISTRY: registry.gitlab.com/turococ/food-delivery-website-prototype
 
+before_script:
+  - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+
+# BUILD
+
+build_web:
+  stage: build
+  image: docker:27
   services:
     - docker:27-dind
-
-  variables:
-    DOCKER_TLS_CERTDIR: "/certs"
-
-  before_script:
-    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
-    
   script:
-    - docker build -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA" -t "$CI_REGISTRY_IMAGE:latest" delivery_service
-    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
-    - docker push "$CI_REGISTRY_IMAGE:latest"
+    - docker build -t $REGISTRY/web:$CI_COMMIT_SHA -f delivery_service/Dockerfile delivery_service/
+    - docker build -t $REGISTRY/web:latest -f delivery_service/Dockerfile delivery_service/
+  only:
+    - main
+    - merge_requests
 
-deploy:
+build_metrics_exporter:
+  stage: build
+  image: docker:27
+  services:
+    - docker:27-dind
+  script:
+    - docker build -t $REGISTRY/metrics-exporter:$CI_COMMIT_SHA -f delivery_service/Dockerfile.go delivery_service/
+    - docker build -t $REGISTRY/metrics-exporter:latest -f delivery_service/Dockerfile.go delivery_service/
+  only:
+    - main
+    - merge_requests
+
+build_worker:
+  stage: build
+  image: docker:27
+  services:
+    - docker:27-dind
+  script:
+    - docker build -t $REGISTRY/worker:$CI_COMMIT_SHA -f delivery_service/Dockerfile.worker delivery_service/
+    - docker build -t $REGISTRY/worker:latest -f delivery_service/Dockerfile.worker delivery_service/
+  only:
+    - main
+    - merge_requests
+
+# PUSH
+
+push_web:
+  stage: push
+  image: docker:27
+  services:
+    - docker:27-dind
+  needs:
+    - job: build_web
+      artifacts: false
+  script:
+    - docker push $REGISTRY/web:$CI_COMMIT_SHA
+    - docker push $REGISTRY/web:latest
+  only:
+    - main
+
+push_metrics_exporter:
+  stage: push
+  image: docker:27
+  services:
+    - docker:27-dind
+  needs:
+    - job: build_metrics_exporter
+      artifacts: false
+  script:
+    - docker push $REGISTRY/metrics-exporter:$CI_COMMIT_SHA
+    - docker push $REGISTRY/metrics-exporter:latest
+  only:
+    - main
+
+push_worker:
+  stage: push
+  image: docker:27
+  services:
+    - docker:27-dind
+  needs:
+    - job: build_worker
+      artifacts: false
+  script:
+    - docker push $REGISTRY/worker:$CI_COMMIT_SHA
+    - docker push $REGISTRY/worker:latest
+  only:
+    - main
+
+# DEPLOY
+
+deploy_argocd:
   stage: deploy
-  image: alpine:3.20
-  before_script:
-    - apk add --no-cache git sed
+  image: bitnami/kubectl:latest
+  needs:
+    - job: push_web
+      artifacts: false
+    - job: push_metrics_exporter
+      artifacts: false
+    - job: push_worker
+      artifacts: false
   script:
-    - 'sed -i "s|image: .*|image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA|" k8s/deployment.yaml'
-    - git config user.email "ci@example.com"
-    - git config user.name "gitlab-ci"
-    - git commit -am "Deploy $CI_COMMIT_SHORT_SHA [skip ci]"
-    - git push "https://oauth2:${CI_PUSH_TOKEN}@gitlab.com/turococ/Food-delivery-website-prototype.git" HEAD:main
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
+    - kubectl config use-context $KUBE_CONTEXT
+    - kubectl patch application food-delivery -n argocd --type merge -p '{"operation":{"initiatedBy":{"username":"gitlab-ci"}}}'
+    - echo "ArgoCD sync triggered"
+  only:
+    - main
+  when: manual
