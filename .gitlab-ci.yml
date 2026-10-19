@@ -11,9 +11,9 @@ variables:
 before_script:
   - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
 
-# BUILD
+# BUILD - PUSH
 
-build_web:
+web:
   stage: build
   image: docker:27
   services:
@@ -21,11 +21,13 @@ build_web:
   script:
     - docker build -t $REGISTRY/web:$CI_COMMIT_SHA -f delivery_service/Dockerfile delivery_service/
     - docker build -t $REGISTRY/web:latest -f delivery_service/Dockerfile delivery_service/
+    - docker push $REGISTRY/web:$CI_COMMIT_SHA
+    - docker push $REGISTRY/web:latest
   only:
     - main
     - merge_requests
 
-build_metrics_exporter:
+metrics_exporter:
   stage: build
   image: docker:27
   services:
@@ -33,11 +35,13 @@ build_metrics_exporter:
   script:
     - docker build -t $REGISTRY/metrics-exporter:$CI_COMMIT_SHA -f delivery_service/Dockerfile.go delivery_service/
     - docker build -t $REGISTRY/metrics-exporter:latest -f delivery_service/Dockerfile.go delivery_service/
+    - docker push $REGISTRY/metrics-exporter:$CI_COMMIT_SHA
+    - docker push $REGISTRY/metrics-exporter:latest
   only:
     - main
     - merge_requests
 
-build_worker:
+worker:
   stage: build
   image: docker:27
   services:
@@ -45,53 +49,11 @@ build_worker:
   script:
     - docker build -t $REGISTRY/worker:$CI_COMMIT_SHA -f delivery_service/Dockerfile.worker delivery_service/
     - docker build -t $REGISTRY/worker:latest -f delivery_service/Dockerfile.worker delivery_service/
-  only:
-    - main
-    - merge_requests
-
-# PUSH
-
-push_web:
-  stage: push
-  image: docker:27
-  services:
-    - docker:27-dind
-  needs:
-    - job: build_web
-      artifacts: false
-  script:
-    - docker push $REGISTRY/web:$CI_COMMIT_SHA
-    - docker push $REGISTRY/web:latest
-  only:
-    - main
-
-push_metrics_exporter:
-  stage: push
-  image: docker:27
-  services:
-    - docker:27-dind
-  needs:
-    - job: build_metrics_exporter
-      artifacts: false
-  script:
-    - docker push $REGISTRY/metrics-exporter:$CI_COMMIT_SHA
-    - docker push $REGISTRY/metrics-exporter:latest
-  only:
-    - main
-
-push_worker:
-  stage: push
-  image: docker:27
-  services:
-    - docker:27-dind
-  needs:
-    - job: build_worker
-      artifacts: false
-  script:
     - docker push $REGISTRY/worker:$CI_COMMIT_SHA
     - docker push $REGISTRY/worker:latest
   only:
     - main
+    - merge_requests
 
 # DEPLOY
 
@@ -99,12 +61,9 @@ deploy_argocd:
   stage: deploy
   image: bitnami/kubectl:latest
   needs:
-    - job: push_web
-      artifacts: false
-    - job: push_metrics_exporter
-      artifacts: false
-    - job: push_worker
-      artifacts: false
+    - web
+    - metrics_exporter
+    - worker
   script:
     - kubectl config use-context $KUBE_CONTEXT
     - kubectl patch application food-delivery -n argocd --type merge -p '{"operation":{"initiatedBy":{"username":"gitlab-ci"}}}'
