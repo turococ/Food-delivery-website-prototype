@@ -5,8 +5,8 @@ set -uo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")" || exit 1
 
 SITE_HOST="cafe.local"
-: "${MINIKUBE_MEMORY_MB:=4096}"
-: "${MINIKUBE_CPUS:=2}"
+: "${MINIKUBE_MEMORY_MB:=8192}"
+: "${MINIKUBE_CPUS:=4}"
 
 
 fail() {
