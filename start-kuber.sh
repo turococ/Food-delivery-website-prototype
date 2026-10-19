@@ -48,17 +48,32 @@ if ! kubectl wait --for=condition=Ready node/minikube --timeout=180s; then
 fi
  
 echo "Жду поды..."
+# Существующие
 kubectl rollout status deployment/food-delivery -n default --timeout=180s \
-    || echo "Предупреждение: food-delivery ещё не готов (kubectl get pods)."
+    || echo "Предупреждение: food-delivery ещё не готов."
 kubectl rollout status deployment/monitoring-grafana -n monitoring --timeout=300s \
-    || echo "Предупреждение: Grafana ещё не готова (kubectl get pods -n monitoring)."
+    || echo "Предупреждение: Grafana ещё не готова."
 kubectl rollout status deployment/argocd-server -n argocd --timeout=180s \
-    || echo "Предупреждение: Argo CD ещё не готов (kubectl get pods -n argocd)."
+    || echo "Предупреждение: Argo CD ещё не готов."
+
+# НОВЫЕ деплойменты
+kubectl rollout status deployment/rabbitmq -n default --timeout=180s \
+    || echo "Предупреждение: rabbitmq ещё не готов."
+kubectl rollout status deployment/redis -n default --timeout=180s \
+    || echo "Предупреждение: redis ещё не готов."
+kubectl rollout status deployment/metrics-exporter -n default --timeout=180s \
+    || echo "Предупреждение: metrics-exporter ещё не готов."
+kubectl rollout status deployment/worker -n default --timeout=180s \
+    || echo "Предупреждение: worker ещё не готов."
  
 stop_forwards
 start_forward monitoring monitoring-grafana 3000:80
 start_forward monitoring monitoring-kube-prometheus-prometheus 9090:9090
 start_forward argocd argocd-server 8443:443
+
+# НОВЫЕ порт-форварды
+start_forward default rabbitmq 15672:15672   # RabbitMQ Management UI
+# start_forward default redis 6379:6379      # раскомментируй если нужен
  
 if ! grep -q "cafe.local" /etc/hosts; then
     echo "В /etc/hosts нет cafe.local. Добавь: echo \"127.0.0.1 cafe.local\" | sudo tee -a /etc/hosts"
@@ -66,11 +81,12 @@ fi
  
 echo
 echo "Готово."
-echo "  Сайт:       http://cafe.local"
-echo "  Grafana:    http://localhost:3000"
-echo "  Prometheus: http://localhost:9090"
-echo "  Argo CD:    https://localhost:8443"
+echo "  Сайт:            http://cafe.local"
+echo "  Grafana:         http://localhost:3000"
+echo "  Prometheus:      http://localhost:9090"
+echo "  Argo CD:         https://localhost:8443"
+echo "  RabbitMQ UI:     http://localhost:15672 (guest/guest)"
 echo
 echo "Если после деплоя или перезапуска пода проброс отвалился, запусти скрипт"
-
+ 
 minikube tunnel
