@@ -32,7 +32,7 @@ spec:
     spec:
       containers:
         - name: metrics-exporter
-          image: registry.gitlab.com/turococ/food-delivery-website-prototype/metrics-exporter:latest
+          image: registry.gitlab.com/turococ/food-delivery-website-prototype/metrics-exporter:555df2a6af93db2813c8e73cd698e85338b60bf0
           imagePullPolicy: Always
           ports:
             - name: http
