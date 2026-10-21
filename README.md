@@ -3,14 +3,11 @@
 Учебный DevOps-проект: сайт доставки еды на Flask, очередь заказов в RabbitMQ, PostgreSQL, воркер, экспортёр метрик, GitOps-деплой через Argo CD и мониторинг в Prometheus/Grafana.
 
 ```
-Браузер → Flask (web) → RabbitMQ (order_queue) → worker → PostgreSQL
-                                                       ↓
-                                              metrics-exporter → Prometheus → Grafana
+Браузер → Flask (web) → RabbitMQ (order_queue) → worker → PostgreSQL → metrics-exporter → Prometheus → Grafana
 ```
 
 ```
-git push → GitLab CI (build 3 images) → Container Registry
-        → CI обновляет image tags в k8s/ → Argo CD → Kubernetes
+git push → GitLab CI (build 3 images) → Container Registry → CI обновляет image tags в k8s/ → Argo CD → Kubernetes
 ```
 
 ## Стек
