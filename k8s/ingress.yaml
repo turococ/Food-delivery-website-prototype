@@ -25,3 +25,14 @@ spec:
                 name: food-delivery
                 port:
                   number: 8080
+    # Catch-all for 127.0.0.1 and any other local Host header.
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: food-delivery
+                port:
+                  number: 8080
+
