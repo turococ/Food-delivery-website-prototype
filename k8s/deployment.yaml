@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: food-delivery
-          image: registry.gitlab.com/turococ/food-delivery-website-prototype/web:ec3ac23fa21e8ff8bc8653a93679ebaf9806451c
+          image: registry.gitlab.com/turococ/food-delivery-website-prototype/web:b8535a170b6d9ee8685f40f01c69d4bb0dc220b1
           imagePullPolicy: Always
           ports:
             - name: http
