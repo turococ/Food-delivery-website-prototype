@@ -6,7 +6,13 @@
 <body>
     <div class="nav">
         <a href="/">Меню</a>
-        <a href="/cart">Корзина</a> <a href="/admin">Войти</a>
+        <a href="/cart">Корзина</a>
+        {% if session.get('admin') %}
+        <a href="/admin">Админка</a>
+        <a href="/logout">Выйти</a>
+        {% else %}
+        <a href="/login">Войти</a>
+        {% endif %}
     </div>
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}

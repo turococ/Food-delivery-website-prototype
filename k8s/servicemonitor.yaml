@@ -12,20 +12,3 @@ spec:
     - port: http
       path: /metrics
       interval: 15s
-
----
-
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: food-delivery-web
-  labels:
-    release: monitoring
-spec:
-  selector:
-    matchLabels:
-      app: food-delivery
-  endpoints:
-    - port: http
-      path: /health
-      interval: 30s

@@ -1,6 +1,7 @@
 /* flash */
 .flash-message.success { background: #28a745; color: white; }
 .flash-message.error { background: #dc3545; color: white; }
+.flash-message.danger { background: #dc3545; color: white; }
 
 /* base.html */
 body 
@@ -268,4 +269,26 @@ body
 {
     color: white;
     text-decoration: none;
+}
+
+.status-form
+{
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.status-form select,
+.status-form button
+{
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid #444;
+    background: #3c3c3c;
+    color: white;
+}
+
+.status-form button
+{
+    cursor: pointer;
 }

@@ -1,0 +1,97 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: food_delivery
+      POSTGRES_USER: food
+      POSTGRES_PASSWORD: foodpass
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U food -d food_delivery"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: food
+      RABBITMQ_DEFAULT_PASS: foodpass
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    ports:
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  web:
+    build:
+      context: ./delivery_service
+      dockerfile: Dockerfile
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: food_delivery
+      DB_USER: food
+      DB_PASSWORD: foodpass
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USER: food
+      RABBITMQ_PASSWORD: foodpass
+      SECRET_KEY: local-development-secret
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: ./delivery_service
+      dockerfile: Dockerfile.worker
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: food_delivery
+      DB_USER: food
+      DB_PASSWORD: foodpass
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USER: food
+      RABBITMQ_PASSWORD: foodpass
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  metrics-exporter:
+    build:
+      context: ./delivery_service
+      dockerfile: Dockerfile.go
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: food_delivery
+      DB_USER: food
+      DB_PASSWORD: foodpass
+    ports:
+      - "8081:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  rabbitmq_data:

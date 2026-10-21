@@ -2,11 +2,11 @@
 {% block content %} 
 <div class="admin-panel">
 <h1>Панель администратора
-    <a href="/logout" style="float:right; border-radius: 15px; padding: 2px; background:red; color:white; padding:5px 10 px;">Выйти</a>
+    <a href="/logout" style="float:right; border-radius: 15px; padding: 5px 10px; background:red; color:white;">Выйти</a>
 </h1>
 <table border="1" cellpadding="5">
     <tr> 
-        <th>ID</th><th>Клиент</th><th>Телефон</th><th>Адрес</th><th>Заказ</th><th>комментарий</th><th>Сумма</th><th>Статус</th><th>Действие</th> 
+        <th>ID</th><th>Клиент</th><th>Телефон</th><th>Адрес</th><th>Заказ</th><th>Комментарий</th><th>Сумма</th><th>Статус</th><th>Действие</th> 
     </tr>
     {% for order in orders %}
     <tr>
@@ -19,13 +19,17 @@
         <td>{{ order.total_price }} ₽</td> 
         <td>{{ order.status }}</td>
         <td>
-            <a href="/update_status/{{ order.id }}/Новый">Новый</a> |
-            <a href="/update_status/{{ order.id }}/Готовится">Готовится</a> | 
-            <a href="/update_status/{{ order.id }}/Доставка">Доставка</a> | 
-            <a href="/update_status/{{ order.id }}/Выполнен">Выполнен</a>
+            <form method="POST" action="/update_status/{{ order.id }}" class="status-form">
+                <select name="status">
+                    {% for status in statuses %}
+                    <option value="{{ status }}" {% if status == order.status %}selected{% endif %}>{{ status }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit">Сохранить</button>
+            </form>
         </td> 
     </tr>
     {% endfor %} 
 </table>
-{% endblock %}
 </div>
+{% endblock %}

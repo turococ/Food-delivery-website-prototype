@@ -1,4 +1,4 @@
-.PHONY: setup start stop tunnel status build push deploy logs
+.PHONY: setup start stop tunnel status build push deploy logs-web logs-worker logs-metrics setup-win start-win stop-win
 
 setup:
 	bash ./setup.sh
@@ -6,14 +6,24 @@ setup:
 start:
 	bash ./start-kuber.sh
 
+stop:
+	bash ./start-kuber.sh stop
+
 tunnel:
 	minikube tunnel
 
-stop:
-	./start-kuber.sh stop
-
 status:
 	kubectl get pods -A
+
+# Windows (PowerShell)
+setup-win:
+	powershell -ExecutionPolicy Bypass -File setup.ps1
+
+start-win:
+	powershell -ExecutionPolicy Bypass -File start-kuber.ps1
+
+stop-win:
+	powershell -ExecutionPolicy Bypass -File start-kuber.ps1 -Stop
 
 build:
 	docker build -t food-delivery-web:local -f delivery_service/Dockerfile delivery_service/
@@ -29,7 +39,7 @@ push:
 	docker push $$REGISTRY/worker:latest
 
 deploy:
-	kubectl patch application food-delivery -n argocd --type merge -p '{"operation":{"initiatedBy":{"username":"make"}}}'
+	kubectl apply -f argocd/application.yaml
 
 logs-web:
 	kubectl logs -l app=food-delivery -f --tail=100

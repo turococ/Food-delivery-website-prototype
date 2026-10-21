@@ -4,7 +4,6 @@ metadata:
   name: rabbitmq
   labels:
     app: rabbitmq
-
 spec:
   selector:
     app: rabbitmq
@@ -24,12 +23,11 @@ metadata:
   name: rabbitmq
   labels:
     app: rabbitmq
-
 spec:
   replicas: 1
   selector:
     matchLabels:
-    app: rabbitmq
+      app: rabbitmq
   template:
     metadata:
       labels:
@@ -43,9 +41,15 @@ spec:
             - containerPort: 15672
           env:
             - name: RABBITMQ_DEFAULT_USER
-              value: "guest"
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-secret
+                  key: username
             - name: RABBITMQ_DEFAULT_PASS
-              value: "guest"
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-secret
+                  key: password
           readinessProbe:
             exec:
               command: ["rabbitmq-diagnostics", "check_running"]
@@ -56,3 +60,10 @@ spec:
               command: ["rabbitmq-diagnostics", "check_running"]
             initialDelaySeconds: 30
             periodSeconds: 30
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
