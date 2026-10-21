@@ -174,6 +174,23 @@ Grafana-дашборд `site metrics` подхватывается автома�
 
 GitLab.com shared runner не имеет доступа к локальному minikube. Поэтому деплой сделан по GitOps: CI обновляет Git, а кластер синхронизирует Argo CD. Если нужен прямой `kubectl` из CI, понадобится self-hosted GitLab Runner в этой же сети.
 
+## Локальная проверка через Docker Compose
+
+Если нужно быстро проверить приложение без Kubernetes:
+
+```bash
+docker compose up -d --build
+```
+
+Сайт будет на `http://localhost:8080`, экспортёр метрик — на `http://localhost:8081/metrics`.
+Логин администратора: `admin` / `admin` (только для локального compose).
+
+Остановка и удаление данных:
+
+```bash
+docker compose down -v
+```
+
 ## Разработка без Kubernetes
 
 Приложение читает настройки из переменных окружения:
