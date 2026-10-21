@@ -65,8 +65,8 @@ function Ensure-Secret([string]$Name, [hashtable]$Values) {
     Write-Host "Создан секрет $Name"
 }
 
-function Get-SecretValue([string]$Secret, [string]$Key) {
-    $encoded = & kubectl get secret $Secret --ignore-not-found -o "jsonpath={.data.$Key}" 2>$null
+function Get-SecretValue([string]$Secret, [string]$Key, [string]$Namespace = "default") {
+    $encoded = & kubectl get secret $Secret -n $Namespace --ignore-not-found -o "jsonpath={.data.$Key}" 2>$null
     if (-not $encoded) { return "" }
     try {
         return [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($encoded))
@@ -215,8 +215,8 @@ Write-Host ""
 Write-Host "Админка сайта: admin / $adminPassword" -ForegroundColor Yellow
 Write-Host ""
 
-$grafanaPassword = Get-SecretValue "monitoring-grafana" "admin-password"
-$argocdPassword = Get-SecretValue "argocd-initial-admin-secret" "password"
+$grafanaPassword = Get-SecretValue "monitoring-grafana" "admin-password" "monitoring"
+$argocdPassword = Get-SecretValue "argocd-initial-admin-secret" "password" "argocd"
 if ($grafanaPassword) { Write-Host "Grafana admin password: $grafanaPassword" }
 if ($argocdPassword) { Write-Host "Argo CD admin password: $argocdPassword" }
 
