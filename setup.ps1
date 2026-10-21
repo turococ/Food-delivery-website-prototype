@@ -3,6 +3,8 @@
 param()
 
 $ErrorActionPreference = "Stop"
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
 $ProjectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $ProjectRoot
 
@@ -135,8 +137,10 @@ if ($controller) {
 }
 
 # Ускоряем реакцию Argo CD на новые коммиты
-& kubectl -n argocd patch configmap argocd-cm --type merge `
-    -p '{"data":{"timeout.reconciliation":"60s"}}' | Out-Null
+$patchFile = Join-Path $env:TEMP "argocd-cm-patch.json"
+'{"data":{"timeout.reconciliation":"60s"}}' | Set-Content -Path $patchFile -Encoding ASCII
+& kubectl -n argocd patch configmap argocd-cm --type merge --patch-file $patchFile | Out-Null
+Remove-Item $patchFile -Force -ErrorAction SilentlyContinue
 
 # Отключаем необязательные компоненты, чтобы сэкономить память
 foreach ($component in @("argocd-dex-server", "argocd-notifications-controller", "argocd-applicationset-controller")) {
@@ -170,7 +174,7 @@ if ($LASTEXITCODE -ne 0) { Fail "Не удалось применить argocd/a
 Write-Host "Жду, пока Argo CD развернёт приложение..."
 $deadline = (Get-Date).AddMinutes(10)
 while ((Get-Date) -lt $deadline) {
-    $deployment = & kubectl get deployment food-delivery -o name 2>$null
+    $deployment = & kubectl get deployment food-delivery --ignore-not-found -o name 2>$null
     if ($deployment) { break }
     Start-Sleep -Seconds 10
 }

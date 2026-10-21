@@ -52,14 +52,11 @@ spec:
                   key: password
           readinessProbe:
             exec:
-              command: ["rabbitmq-diagnostics", "check_running"]
-            initialDelaySeconds: 10
+              command: ["rabbitmq-diagnostics", "-q", "check_running"]
+            initialDelaySeconds: 20
             periodSeconds: 10
-          livenessProbe:
-            exec:
-              command: ["rabbitmq-diagnostics", "check_running"]
-            initialDelaySeconds: 30
-            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 6
           resources:
             requests:
               memory: "128Mi"
