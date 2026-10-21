@@ -79,16 +79,16 @@ update_manifests:
     - git config --global user.email "ci@food-delivery.local"
     - git config --global user.name "GitLab CI"
   script:
-    - sed -i -E "s#(image: .*/web):[^ ]+#\1:${CI_COMMIT_SHA}#" k8s/deployment.yaml
-    - sed -i -E "s#(image: .*/worker):[^ ]+#\1:${CI_COMMIT_SHA}#" k8s/worker.yaml
-    - sed -i -E "s#(image: .*/metrics-exporter):[^ ]+#\1:${CI_COMMIT_SHA}#" k8s/metrics_exporter.yaml
-    - git add k8s/deployment.yaml k8s/worker.yaml k8s/metrics_exporter.yaml
+    - 'sed -i -E "s#(image: .*/web):[^ ]+#\1:${CI_COMMIT_SHA}#" k8s/deployment.yaml'
+    - 'sed -i -E "s#(image: .*/worker):[^ ]+#\1:${CI_COMMIT_SHA}#" k8s/worker.yaml'
+    - 'sed -i -E "s#(image: .*/metrics-exporter):[^ ]+#\1:${CI_COMMIT_SHA}#" k8s/metrics_exporter.yaml'
+    - 'git add k8s/deployment.yaml k8s/worker.yaml k8s/metrics_exporter.yaml'
     - |
       if git diff --cached --quiet; then
         echo "Теги образов уже актуальны"
         exit 0
       fi
-    - git commit -m "ci: deploy ${CI_COMMIT_SHORT_SHA} [skip ci]"
-    - git push "https://oauth2:${GIT_PUSH_TOKEN}@gitlab.com/${CI_PROJECT_PATH}.git" "HEAD:${CI_COMMIT_BRANCH}"
+    - 'git commit -m "ci: deploy ${CI_COMMIT_SHORT_SHA} [skip ci]"'
+    - 'git push "https://oauth2:${GIT_PUSH_TOKEN}@gitlab.com/${CI_PROJECT_PATH}.git" "HEAD:${CI_COMMIT_BRANCH}"'
   rules:
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
