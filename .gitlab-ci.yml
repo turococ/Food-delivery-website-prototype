@@ -75,7 +75,7 @@ update_manifests:
     - metrics_exporter
   before_script:
     - apk add --no-cache git sed
-    - test -n "$GIT_PUSH_TOKEN" || (echo "Не задана CI-переменная GIT_PUSH_TOKEN" && exit 1)
+    - test -n "$GIT_PUSH_TOKEN" || (echo "GIT_PUSH_TOKEN пуст. Добавьте переменную в Settings -> CI/CD -> Variables, scope All (*)." && exit 1)
     - git config --global user.email "ci@food-delivery.local"
     - git config --global user.name "GitLab CI"
   script:
@@ -90,5 +90,21 @@ update_manifests:
       fi
     - 'git commit -m "ci: deploy ${CI_COMMIT_SHORT_SHA} [skip ci]"'
     - 'git push "https://oauth2:${GIT_PUSH_TOKEN}@gitlab.com/${CI_PROJECT_PATH}.git" "HEAD:${CI_COMMIT_BRANCH}"'
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+
+# Временная диагностика: показывает только имена переменных, без значений.
+check_token:
+  stage: .pre
+  image: alpine:3.20
+  script:
+    - |
+      if [ -n "${GIT_PUSH_TOKEN:-}" ]; then
+        echo "GIT_PUSH_TOKEN is visible, length=${#GIT_PUSH_TOKEN}"
+      else
+        echo "GIT_PUSH_TOKEN is NOT visible"
+      fi
+      echo "--- variable names containing git/token ---"
+      env | cut -d= -f1 | sort | grep -Ei 'git|token' || true
   rules:
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
