@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: worker
-          image: registry.gitlab.com/turococ/food-delivery-website-prototype/worker:2d33276c56aa29f95dfbc347ae7336923ad671b7
+          image: registry.gitlab.com/turococ/food-delivery-website-prototype/worker:eefa3f314725d1f86e2f11b785f344f0a5d9ea5b
           imagePullPolicy: Always
           env:
             - name: DB_HOST
