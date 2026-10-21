@@ -66,9 +66,13 @@ function Ensure-Secret([string]$Name, [hashtable]$Values) {
 }
 
 function Get-SecretValue([string]$Secret, [string]$Key) {
-    $encoded = & kubectl get secret $Secret -o "jsonpath={.data.$Key}" 2>$null
+    $encoded = & kubectl get secret $Secret --ignore-not-found -o "jsonpath={.data.$Key}" 2>$null
     if (-not $encoded) { return "" }
-    return [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($encoded))
+    try {
+        return [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($encoded))
+    } catch {
+        return ""
+    }
 }
 
 Write-Step "Проверяю инструменты"
@@ -118,6 +122,18 @@ if ($LASTEXITCODE -ne 0) { Fail "Не удалось установить kube-p
 
 & kubectl wait --for=condition=Established crd/servicemonitors.monitoring.coreos.com --timeout=180s | Out-Null
 if ($LASTEXITCODE -ne 0) { Fail "CRD ServiceMonitor не появился." }
+
+Write-Host "Жду секрет Grafana..."
+$grafanaSecret = $null
+$grafanaDeadline = (Get-Date).AddMinutes(3)
+while ((Get-Date) -lt $grafanaDeadline) {
+    $grafanaSecret = & kubectl get secret monitoring-grafana -n monitoring --ignore-not-found -o name 2>$null
+    if ($grafanaSecret) { break }
+    Start-Sleep -Seconds 2
+}
+if (-not $grafanaSecret) {
+    Write-Warning "Секрет monitoring-grafana пока не появился; пароль Grafana можно посмотреть позже."
+}
 
 Write-Step "Ставлю Argo CD"
 & kubectl create namespace argocd --dry-run=client -o yaml | & kubectl apply -f - | Out-Null
